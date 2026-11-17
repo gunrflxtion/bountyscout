@@ -7,6 +7,14 @@ Paste a bug bounty program page and get an instant **GO / CAUTION / SKIP** verdi
 reward, submit fee, reputation gate, KYC and scope — extracted and scored in seconds,
 before you spend a single hour auditing a program you cannot even submit to.
 
+## The experience (v2)
+
+Desktop-first dashboard: dark theme by default (light toggle), bento stat cards,
+animated score ring with count-up on every verdict, staged shimmer while analyzing,
+staggered table reveals, hover micro-interactions, and a **Cmd/Ctrl+K** command
+palette to jump to any program. All motion is transform + opacity only, under 200 ms
+for micro-interactions. Zero dependencies, zero build step, still 100% client-side.
+
 ## The problem
 
 Security researchers waste days auditing programs they cannot submit to: a $100
