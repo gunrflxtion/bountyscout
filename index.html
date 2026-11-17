@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BountyScout — AI Bug Bounty Program Scout</title>
+<meta name="description" content="Paste a bug bounty program page and get an instant GO / CAUTION / SKIP verdict: reward, submit fee, reputation gate, KYC and scope, extracted and scored.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">SLAY HACKS 2026 &middot; Build Bold. Think Beyond. Create with AI.</p>
+    <h1>BountyScout</h1>
+    <p class="tagline">An AI scout that reads a bug bounty program and tells you, in seconds,
+      whether it is worth your audit time — before you spend a single hour on it.</p>
+    <p class="hero-cta"><a class="btn" href="#analyzer">Analyze a program ↓</a>
+      <a class="btn ghost" href="#samples">See 11 real programs scored</a></p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="problem">
+    <h2>The problem</h2>
+    <p>Security researchers waste days auditing programs they cannot even submit to:
+      a $100 pay-to-submit fee discovered after the audit, a 120-point reputation gate,
+      a KYC wall at payout, or a scope outside their stack. Program pages hide these
+      gates in long rules text. BountyScout reads the page for you and surfaces the
+      decision facts first: <strong>reward, fee, reputation gate, KYC, scope</strong> —
+      scored 0–100 with a <strong>GO / CAUTION / SKIP</strong> verdict and the reasons behind it.</p>
+  </section>
+
+  <section id="analyzer" class="card">
+    <h2>Analyze a program</h2>
+    <p class="hint">Paste the program page text (rules, rewards, how to submit). Nothing leaves
+      your browser — the core analysis runs 100% locally. The optional AI second opinion
+      below only calls OpenRouter if you provide your own key.</p>
+    <label for="prog-name">Program name</label>
+    <input id="prog-name" type="text" placeholder="e.g. Morpheus (MOR)" autocomplete="off">
+    <label for="prog-url">Program URL (optional)</label>
+    <input id="prog-url" type="url" placeholder="https://example.org/bug-bounty" autocomplete="off">
+    <label for="prog-text">Program text</label>
+    <textarea id="prog-text" rows="9" placeholder="Paste the bounty program rules / rewards / submission instructions here…"></textarea>
+    <div class="row">
+      <button id="analyze-btn" class="btn" type="button">Analyze →</button>
+      <button id="clear-btn" class="btn ghost" type="button">Clear</button>
+    </div>
+    <div id="result" class="result" hidden></div>
+    <div id="llm-box" class="llm-box">
+      <details>
+        <summary>Optional AI second opinion (OpenRouter, your key, stored only in this browser)</summary>
+        <p class="hint">If you add an OpenRouter API key, BountyScout asks a free-tier model to
+          double-check the verdict against the same text. The key is kept in
+          <code>localStorage</code> on your device and never sent anywhere else.</p>
+        <label for="llm-key">OpenRouter API key</label>
+        <input id="llm-key" type="password" placeholder="sk-or-…" autocomplete="off">
+        <label for="llm-model">Model</label>
+        <input id="llm-model" type="text" placeholder="e.g. meta-llama/llama-3.3-70b-instruct:free" autocomplete="off">
+        <button id="llm-btn" class="btn ghost" type="button">Ask for a second opinion</button>
+        <div id="llm-result" class="llm-result" hidden></div>
+      </details>
+    </div>
+  </section>
+
+  <section id="samples" class="card">
+    <h2>11 real programs, scored live</h2>
+    <p class="hint">Built-in dataset from public program pages (Nov 2026). Click a row to load
+      its text into the analyzer. Scores are computed by the same engine, in your browser.</p>
+    <div class="table-wrap">
+      <table id="samples-table">
+        <thead><tr><th>Program</th><th>Platform</th><th>Reward</th><th>Gate</th><th>Score</th><th>Verdict</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>How the AI works</h2>
+    <ol>
+      <li><strong>Extract.</strong> A deterministic pattern + keyword pipeline reads the program
+        text: reward amounts ($ and USDC), submit fees (including “credits = US dollars”),
+        reputation gates (“120+ points”), KYC mentions, scope (EVM / Move / Rust / Web),
+        deadlines, and free-submission signals. “Out of scope” clauses are excluded so a
+        program that says “EVM out of scope” is not misread as EVM scope.</li>
+      <li><strong>Score.</strong> A transparent additive model (0–100). Free submission +20,
+        high reward up to +15, EVM scope +10, early/live +5; fees −25/−35, reputation
+        gates −20/−25, KYC −5. Hard caps: an entry fee of $50+ or a 100+ reputation gate
+        caps the score at SKIP — a hunter with zero reputation literally cannot enter.</li>
+      <li><strong>Explain.</strong> Every point adjustment is listed as a human-readable reason,
+        so the verdict is auditable. The result exports as a Markdown brief with a
+        pre-audit checklist.</li>
+      <li><strong>Optional second opinion.</strong> With your own OpenRouter key, a free-tier
+        LLM re-reads the same text and either agrees or disagrees with reasons. The
+        deterministic verdict is always shown first; the LLM never overrides it silently.</li>
+    </ol>
+    <p class="hint"><strong>Honest limits:</strong> the extractor reads what the text says — a gate
+      the page does not mention cannot be detected. Always verify fee, reputation and KYC
+      live on the program page before auditing. BountyScout is a triage tool, not a guarantee.</p>
+  </section>
+
+  <section class="card">
+    <h2>Why it matters</h2>
+    <p>In one research round, 3 out of 11 real programs turned out to be unauditable for a
+      free-first hunter with zero reputation — despite headline rewards up to $500,000.
+      Each one cost hours of reading and audit work before the gate was found. BountyScout
+      finds the gate in seconds, so the hours go to programs that can actually pay.</p>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p>BountyScout — built for SLAY HACKS 2026 by G (zkgvn). Open source (MIT).
+    Core engine: <code>engine.js</code> (zero dependencies, tested with
+    <code>node tests/engine.test.js</code> — 13 tests). No data leaves your browser
+    unless you opt into the OpenRouter second opinion.</p>
+</footer>
+
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
