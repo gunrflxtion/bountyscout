@@ -1,26 +1,74 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BountyScout — AI Bug Bounty Program Scout</title>
 <meta name="description" content="Paste a bug bounty program page and get an instant GO / CAUTION / SKIP verdict: reward, submit fee, reputation gate, KYC and scope, extracted and scored.">
+<meta name="color-scheme" content="dark light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="hero">
-  <div class="wrap">
-    <p class="eyebrow">SLAY HACKS 2026 &middot; Build Bold. Think Beyond. Create with AI.</p>
-    <h1>BountyScout</h1>
-    <p class="tagline">An AI scout that reads a bug bounty program and tells you, in seconds,
-      whether it is worth your audit time — before you spend a single hour on it.</p>
-    <p class="hero-cta"><a class="btn" href="#analyzer">Analyze a program ↓</a>
-      <a class="btn ghost" href="#samples">See 11 real programs scored</a></p>
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true">⌖</span>
+      <span class="brand-name">BountyScout</span>
+      <span class="brand-tag">v2</span>
+    </a>
+    <nav class="topnav" aria-label="Sections">
+      <a href="#analyzer">Analyzer</a>
+      <a href="#samples">Programs</a>
+      <a href="#how">How it works</a>
+    </nav>
+    <div class="top-actions">
+      <button id="palette-btn" class="icon-btn" type="button" title="Jump to a program (Ctrl/⌘ K)" aria-label="Jump to a program">
+        <span aria-hidden="true">⌘K</span>
+      </button>
+      <button id="theme-btn" class="icon-btn" type="button" title="Toggle dark / light" aria-label="Toggle dark or light theme">
+        <span id="theme-icon" aria-hidden="true">☾</span>
+      </button>
+      <a class="btn btn-sm" href="https://github.com/gunrflxtion/bountyscout" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
   </div>
 </header>
 
-<main class="wrap">
-  <section class="problem">
+<main class="wrap" id="top">
+  <section class="hero reveal">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> SLAY HACKS 2026 · Build Bold. Think Beyond. Create with AI.</p>
+    <h1>Check first.<br><span class="accent-text">Then audit.</span></h1>
+    <p class="tagline">An AI scout that reads a bug bounty program and tells you, in seconds,
+      whether it is worth your audit time — before you spend a single hour on it.</p>
+    <p class="hero-cta">
+      <a class="btn" href="#analyzer">Analyze a program ↓</a>
+      <a class="btn ghost" href="#samples">See 11 real programs scored</a>
+    </p>
+    <div class="bento">
+      <div class="bento-card reveal" style="--d:.05s">
+        <span class="bento-num">11</span>
+        <span class="bento-label">real programs scored live</span>
+      </div>
+      <div class="bento-card reveal" style="--d:.15s">
+        <span class="bento-num warn">3</span>
+        <span class="bento-label">unauditable despite up to $500,000 rewards</span>
+      </div>
+      <div class="bento-card reveal" style="--d:.25s">
+        <span class="bento-num">~4s</span>
+        <span class="bento-label">from paste to verdict, in your browser</span>
+      </div>
+      <div class="bento-card reveal" style="--d:.35s">
+        <span class="bento-num">0</span>
+        <span class="bento-label">servers · keys · tracking — 100% client-side</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="problem reveal">
     <h2>The problem</h2>
     <p>Security researchers waste days auditing programs they cannot even submit to:
       a $100 pay-to-submit fee discovered after the audit, a 120-point reputation gate,
@@ -30,22 +78,31 @@
       scored 0–100 with a <strong>GO / CAUTION / SKIP</strong> verdict and the reasons behind it.</p>
   </section>
 
-  <section id="analyzer" class="card">
-    <h2>Analyze a program</h2>
+  <section id="analyzer" class="card reveal">
+    <div class="card-head">
+      <h2>Analyze a program</h2>
+      <span class="chip">100% local</span>
+    </div>
     <p class="hint">Paste the program page text (rules, rewards, how to submit). Nothing leaves
       your browser — the core analysis runs 100% locally. The optional AI second opinion
       below only calls OpenRouter if you provide your own key.</p>
-    <label for="prog-name">Program name</label>
-    <input id="prog-name" type="text" placeholder="e.g. Morpheus (MOR)" autocomplete="off">
-    <label for="prog-url">Program URL (optional)</label>
-    <input id="prog-url" type="url" placeholder="https://example.org/bug-bounty" autocomplete="off">
-    <label for="prog-text">Program text</label>
-    <textarea id="prog-text" rows="9" placeholder="Paste the bounty program rules / rewards / submission instructions here…"></textarea>
-    <div class="row">
-      <button id="analyze-btn" class="btn" type="button">Analyze →</button>
-      <button id="clear-btn" class="btn ghost" type="button">Clear</button>
+    <div class="analyzer-grid">
+      <div class="analyzer-form">
+        <label for="prog-name">Program name</label>
+        <input id="prog-name" type="text" placeholder="e.g. Morpheus (MOR)" autocomplete="off">
+        <label for="prog-url">Program URL (optional)</label>
+        <input id="prog-url" type="url" placeholder="https://example.org/bug-bounty" autocomplete="off">
+        <label for="prog-text">Program text</label>
+        <textarea id="prog-text" rows="9" placeholder="Paste the bounty program rules / rewards / submission instructions here…"></textarea>
+        <div class="row">
+          <button id="analyze-btn" class="btn" type="button">Analyze →</button>
+          <button id="clear-btn" class="btn ghost" type="button">Clear</button>
+        </div>
+      </div>
+      <div class="result-col">
+        <div id="result" class="result" hidden></div>
+      </div>
     </div>
-    <div id="result" class="result" hidden></div>
     <div id="llm-box" class="llm-box">
       <details>
         <summary>Optional AI second opinion (OpenRouter, your key, stored only in this browser)</summary>
@@ -62,10 +119,14 @@
     </div>
   </section>
 
-  <section id="samples" class="card">
-    <h2>11 real programs, scored live</h2>
+  <section id="samples" class="card reveal">
+    <div class="card-head">
+      <h2>11 real programs, scored live</h2>
+      <span class="chip">Nov 2026 dataset</span>
+    </div>
     <p class="hint">Built-in dataset from public program pages (Nov 2026). Click a row to load
-      its text into the analyzer. Scores are computed by the same engine, in your browser.</p>
+      its text into the analyzer. Scores are computed by the same engine, in your browser.
+      Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> to jump to any program.</p>
     <div class="table-wrap">
       <table id="samples-table">
         <thead><tr><th>Program</th><th>Platform</th><th>Reward</th><th>Gate</th><th>Score</th><th>Verdict</th></tr></thead>
@@ -74,9 +135,9 @@
     </div>
   </section>
 
-  <section class="card">
+  <section id="how" class="card reveal">
     <h2>How the AI works</h2>
-    <ol>
+    <ol class="steps">
       <li><strong>Extract.</strong> A deterministic pattern + keyword pipeline reads the program
         text: reward amounts ($ and USDC), submit fees (including “credits = US dollars”),
         reputation gates (“120+ points”), KYC mentions, scope (EVM / Move / Rust / Web),
@@ -98,7 +159,7 @@
       live on the program page before auditing. BountyScout is a triage tool, not a guarantee.</p>
   </section>
 
-  <section class="card">
+  <section class="card reveal">
     <h2>Why it matters</h2>
     <p>In one research round, 3 out of 11 real programs turned out to be unauditable for a
       free-first hunter with zero reputation — despite headline rewards up to $500,000.
@@ -113,6 +174,17 @@
     <code>node tests/engine.test.js</code> — 13 tests). No data leaves your browser
     unless you opt into the OpenRouter second opinion.</p>
 </footer>
+
+<div id="palette" class="palette" hidden role="dialog" aria-modal="true" aria-label="Jump to a program">
+  <div class="palette-backdrop" data-close></div>
+  <div class="palette-panel">
+    <input id="palette-input" type="text" placeholder="Jump to a program…  (type to filter, ↑↓ to move, Enter to load)" autocomplete="off">
+    <ul id="palette-list" role="listbox" aria-label="Programs"></ul>
+    <p class="palette-hint"><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>Enter</kbd> load into analyzer · <kbd>Esc</kbd> close</p>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="engine.js"></script>
 <script src="app.js"></script>
