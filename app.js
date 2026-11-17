@@ -105,6 +105,47 @@ function money(v) {
   return v === null || v === undefined ? 'not found' : '$' + v.toLocaleString('en-US');
 }
 
+const RING_C = 2 * Math.PI * 34; // score-ring circumference (r=34)
+
+function animateScoreRing(color, score) {
+  const fg = document.querySelector('.ring-fg');
+  const num = document.querySelector('.ring-num b');
+  const fill = document.querySelector('.score-fill');
+  if (!fg || !num) return;
+  fg.style.strokeDashoffset = RING_C;
+  if (fill) fill.style.transform = 'scaleX(0)';
+  const target = RING_C * (1 - score / 100);
+  const t0 = performance.now();
+  const dur = 850;
+  function tick(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    const e = 1 - Math.pow(1 - p, 3); // easeOutCubic
+    num.textContent = Math.round(score * e);
+    if (p >= 1) {
+      fg.style.strokeDashoffset = target;
+      if (fill) fill.style.transform = 'scaleX(' + score / 100 + ')';
+    } else {
+      fg.style.strokeDashoffset = RING_C - (RING_C - target) * e;
+      if (fill) fill.style.transform = 'scaleX(' + (score / 100) * e + ')';
+      requestAnimationFrame(tick);
+    }
+  }
+  requestAnimationFrame(() => requestAnimationFrame(tick));
+}
+
+let toastTimer = null;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.hidden = false;
+  requestAnimationFrame(() => t.classList.add('show'));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => { t.hidden = true; }, 300);
+  }, 2600);
+}
+
 function renderReport(report) {
   const s = report.signals;
   const gate = [];
@@ -120,20 +161,25 @@ function renderReport(report) {
     ['Deadline', s.deadline ? esc(s.deadline) : 'not found'],
     ['Free submit', s.freeSubmit ? 'yes' : 'no'],
   ];
-  $('result').hidden = false;
-  $('result').innerHTML =
-    '<div class="verdict-row"><span class="badge ' + report.verdictColor + '">' + report.verdict + '</span>' +
-    '<span class="score-line">' + report.score + ' / 100</span>' +
-    '<span class="hint">' + esc(report.summary) + '</span></div>' +
-    '<div class="score-bar"><div class="score-fill ' + report.verdictColor +
-    '" style="width:' + report.score + '%"></div></div>' +
+  const res = $('result');
+  res.hidden = false;
+  res.innerHTML =
+    '<div class="result-pop"><div class="verdict-hero">' +
+    '<div class="score-ring" role="img" aria-label="Score ' + report.score + ' out of 100">' +
+    '<svg width="96" height="96" viewBox="0 0 96 96"><circle class="ring-bg" cx="48" cy="48" r="34"></circle>' +
+    '<circle class="ring-fg ' + report.verdictColor + '" cx="48" cy="48" r="34" stroke-dasharray="' + RING_C.toFixed(1) + '" stroke-dashoffset="' + RING_C.toFixed(1) + '"></circle></svg>' +
+    '<span class="ring-num"><span class="ring-num-inner"><b>0</b><small>/ 100</small></span></span></div>' +
+    '<div class="verdict-meta"><span class="badge ' + report.verdictColor + '">' + report.verdict + '</span>' +
+    '<span class="verdict-summary">' + esc(report.summary) + '</span></div></div>' +
+    '<div class="score-bar"><div class="score-fill ' + report.verdictColor + '"></div></div>' +
     '<table class="facts">' + facts.map((f) => '<tr><td>' + f[0] + '</td><td>' + f[1] + '</td></tr>').join('') + '</table>' +
     '<h3>Why this score</h3><ul class="reasons">' +
-    report.reasons.map((r) => '<li>' + esc(r) + '</li>').join('') + '</ul>' +
+    report.reasons.map((r, i) => '<li class="reveal-row" style="--d:' + (0.08 * i).toFixed(2) + 's">' + esc(r) + '</li>').join('') + '</ul>' +
     '<div class="row"><button class="btn ghost" type="button" id="export-btn">Download brief (.md)</button>' +
     '<button class="btn ghost" type="button" id="copy-btn">Copy brief</button></div>' +
     '<p class="hint">Verify fee, reputation and KYC live on the program page before auditing — ' +
-    'the extractor only reads what the pasted text says.</p>';
+    'the extractor only reads what the pasted text says.</p></div>';
+  animateScoreRing(report.verdictColor, report.score);
   $('export-btn').addEventListener('click', () => {
     const blob = new Blob([BountyScout.briefMarkdown(report)], { type: 'text/markdown' });
     const a = document.createElement('a');
@@ -141,11 +187,34 @@ function renderReport(report) {
     a.download = 'bountyscout-brief-' + report.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.md';
     a.click();
     URL.revokeObjectURL(a.href);
+    toast('Brief downloaded ✓');
   });
   $('copy-btn').addEventListener('click', () => {
     navigator.clipboard.writeText(BountyScout.briefMarkdown(report)).catch(() => {});
     $('copy-btn').textContent = 'Copied ✓';
+    toast('Brief copied to clipboard ✓');
     setTimeout(() => { $('copy-btn').textContent = 'Copy brief'; }, 1500);
+  });
+}
+
+const STAGES = ['Extracting reward, fees, gates, KYC, scope…', 'Scoring 0–100 with the transparent model…', 'Explaining the verdict…'];
+
+function showStages() {
+  const res = $('result');
+  res.hidden = false;
+  res.innerHTML = '<div class="stages">' + STAGES.map((s, i) =>
+    '<div class="stage" data-stage="' + i + '"><span class="stage-dot"></span><span>' + s + '</span></div>'
+  ).join('') + '</div><div class="skeleton" style="width:82%"></div><div class="skeleton" style="width:64%"></div><div class="skeleton" style="width:74%"></div>';
+  return new Promise((resolve) => {
+    STAGES.forEach((_, i) => {
+      setTimeout(() => {
+        document.querySelectorAll('.stage').forEach((el, j) => {
+          el.classList.toggle('active', j === i);
+          el.classList.toggle('done', j < i);
+        });
+        if (i === STAGES.length - 1) setTimeout(resolve, 380);
+      }, 340 * (i + 1));
+    });
   });
 }
 
@@ -155,40 +224,53 @@ function analyze() {
   const url = $('prog-url').value.trim() || null;
   if (!text.trim()) {
     $('result').hidden = false;
-    $('result').innerHTML = '<p>Paste the program text first — rules, rewards and how to submit.</p>';
+    $('result').innerHTML = '<p class="result-empty">Paste the program text first — rules, rewards and how to submit.</p>';
     return;
   }
+  const btn = $('analyze-btn');
+  btn.disabled = true;
+  btn.textContent = 'Analyzing…';
   lastReport = BountyScout.analyzeProgram({ name, text, url });
+  showStages().then(() => {
+    renderReport(lastReport);
+    $('llm-result').hidden = true;
+    btn.disabled = false;
+    btn.textContent = 'Analyze →';
+  });
+}
+
+function loadProgram(p, row) {
+  document.querySelectorAll('#samples-table tbody tr').forEach((tr) => tr.classList.remove('selected'));
+  if (row) row.classList.add('selected');
+  $('prog-name').value = p.name;
+  $('prog-url').value = p.url || '';
+  $('prog-text').value = p.text;
+  lastReport = BountyScout.analyzeProgram(p);
   renderReport(lastReport);
-  $('llm-result').hidden = true;
+  document.getElementById('analyzer').scrollIntoView({ behavior: 'smooth' });
 }
 
 function renderSamples() {
   const tbody = document.querySelector('#samples-table tbody');
-  tbody.innerHTML = SAMPLE_PROGRAMS.map((p) => {
+  tbody.innerHTML = SAMPLE_PROGRAMS.map((p, i) => {
     const r = BountyScout.analyzeProgram(p);
     const gate = [];
     if (r.signals.fee) gate.push('$' + r.signals.fee.amountUsd + ' fee');
     if (r.signals.reputationGate) gate.push(r.signals.reputationGate.points + '+ rep');
     if (r.signals.kyc) gate.push('KYC');
-    return '<tr data-id="' + esc(p.id) + '"><td><strong>' + esc(p.name) + '</strong><br>' +
+    return '<tr data-id="' + esc(p.id) + '" class="reveal-row" style="--d:' + (0.05 * i).toFixed(2) + 's"><td><strong>' + esc(p.name) + '</strong><br>' +
       '<span class="hint">' + esc(p.note || '') + '</span></td>' +
       '<td>' + esc(p.platform) + '</td>' +
       '<td>' + money(r.signals.rewardMaxUsd) + '</td>' +
       '<td>' + (gate.length ? esc(gate.join(', ')) : '—') + '</td>' +
-      '<td><strong>' + r.score + '</strong></td>' +
+      '<td><span class="score-num">' + r.score + '</span></td>' +
       '<td><span class="pill ' + r.verdictColor + '">' + r.verdict + '</span></td></tr>';
   }).join('');
   tbody.querySelectorAll('tr').forEach((tr) => {
     tr.addEventListener('click', () => {
       const p = SAMPLE_PROGRAMS.find((x) => x.id === tr.getAttribute('data-id'));
       if (!p) return;
-      $('prog-name').value = p.name;
-      $('prog-url').value = p.url || '';
-      $('prog-text').value = p.text;
-      lastReport = BountyScout.analyzeProgram(p);
-      renderReport(lastReport);
-      document.getElementById('analyzer').scrollIntoView({ behavior: 'smooth' });
+      loadProgram(p, tr);
     });
   });
 }
@@ -227,7 +309,104 @@ async function askSecondOpinion() {
   }
 }
 
+function initTheme() {
+  const root = document.documentElement;
+  let saved = null;
+  try { saved = localStorage.getItem('bountyscout.theme'); } catch (e) { /* ignore */ }
+  const theme = saved || 'dark'; // signature look is dark; toggle persists the choice
+  root.setAttribute('data-theme', theme);
+  $('theme-icon').textContent = theme === 'dark' ? '☾' : '☀';
+  $('theme-btn').addEventListener('click', () => {
+    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    $('theme-icon').textContent = next === 'dark' ? '☾' : '☀';
+    try { localStorage.setItem('bountyscout.theme', next); } catch (e) { /* ignore */ }
+  });
+}
+
+function initPalette() {
+  const pal = $('palette');
+  const input = $('palette-input');
+  const list = $('palette-list');
+  let items = [];
+  let active = 0;
+  function render(q) {
+    const query = (q || '').toLowerCase();
+    items = SAMPLE_PROGRAMS.map((p) => ({ p, r: BountyScout.analyzeProgram(p) }))
+      .filter(({ p, r }) => !query || p.name.toLowerCase().includes(query) ||
+        p.platform.toLowerCase().includes(query) || r.verdict.toLowerCase() === query);
+    active = 0;
+    list.innerHTML = items.length ? items.map(({ p, r }, i) =>
+      '<li data-i="' + i + '" role="option" class="' + (i === 0 ? 'active' : '') + '">' +
+      '<span><strong>' + esc(p.name) + '</strong></span>' +
+      '<span class="p-meta">' + r.score + ' · <span class="pill ' + r.verdictColor + '">' + r.verdict + '</span></span></li>'
+    ).join('') : '<li><span class="p-empty">No program matches “' + esc(q || '') + '”.</span></li>';
+  }
+  function open() {
+    pal.hidden = false;
+    requestAnimationFrame(() => pal.classList.add('open'));
+    render('');
+    input.value = '';
+    setTimeout(() => input.focus(), 60);
+  }
+  function close() {
+    pal.classList.remove('open');
+    setTimeout(() => { pal.hidden = true; }, 180);
+    input.blur();
+  }
+  function choose(i) {
+    const it = items[i];
+    if (!it) return;
+    close();
+    loadProgram(it.p, document.querySelector('#samples-table tbody tr[data-id="' + it.p.id + '"]'));
+  }
+  $('palette-btn').addEventListener('click', open);
+  pal.querySelector('[data-close]').addEventListener('click', close);
+  input.addEventListener('input', () => render(input.value));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!items.length) return;
+      active = (active + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      list.querySelectorAll('li').forEach((li, i) => li.classList.toggle('active', i === active));
+    } else if (e.key === 'Enter') {
+      choose(active);
+    } else if (e.key === 'Escape') {
+      close();
+    }
+  });
+  list.addEventListener('click', (e) => {
+    const li = e.target.closest('li[data-i]');
+    if (li) choose(parseInt(li.getAttribute('data-i'), 10));
+  });
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      if (pal.hidden) open(); else close();
+    } else if (e.key === 'Escape' && !pal.hidden) {
+      close();
+    }
+  });
+}
+
+function initReveals() {
+  const els = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window)) {
+    els.forEach((el) => el.classList.add('in'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { threshold: 0.08 });
+  els.forEach((el) => io.observe(el));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  initPalette();
+  initReveals();
   renderSamples();
   $('analyze-btn').addEventListener('click', analyze);
   $('clear-btn').addEventListener('click', () => {
