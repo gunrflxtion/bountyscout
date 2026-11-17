@@ -1,6 +1,6 @@
 # BountyScout — AI Bug Bounty Program Scout
 
-**SLAY HACKS 2026 submission** · [Live demo](#) (GitHub Pages — enable in repo Settings → Pages) ·
+**SLAY HACKS 2026 submission** · [Live demo](https://gunrflxtion.github.io/bountyscout/) ·
 [Devpost](https://slayy-hacks.devpost.com/)
 
 Paste a bug bounty program page and get an instant **GO / CAUTION / SKIP** verdict:
